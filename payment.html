@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Payment</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 500px;
+      margin: auto;
+      background-color: #f9f9f9;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .total-price {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .payment-methods {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 20px;
+    }
+
+    .payment-methods button {
+      flex: 1;
+      margin: 0 5px;
+      padding: 10px;
+      font-size: 1rem;
+      cursor: pointer;
+      background-color: #ddd;
+      border: none;
+      border-radius: 5px;
+    }
+
+    .payment-methods button.active {
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    .payment-form {
+      display: none;
+    }
+
+    .payment-form.active {
+      display: block;
+    }
+
+    form input[type="text"],
+    form input[type="email"],
+    form input[type="number"],
+    form input[type="tel"] {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    button.submit-btn {
+      margin-top: 20px;
+      padding: 12px;
+      font-size: 1.1rem;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      width: 100%;
+      cursor: pointer;
+    }
+
+    button.submit-btn:hover {
+      background-color: #45a049;
+    }
+
+    .qr-code {
+      display: flex;
+      justify-content: center;
+      margin-top: 10px;
+    }
+
+    .qr-code img {
+      width: 150px;
+      height: 150px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Payment</h1>
+
+  <div class="total-price" id="totalPriceDisplay">Loading total price...</div>
+
+  <div class="payment-methods">
+    <button class="method-btn active" data-method="card">Card</button>
+    <button class="method-btn" data-method="upi">UPI</button>
+    <button class="method-btn" data-method="paypal">PayPal</button>
+  </div>
+
+  <!-- Card Payment -->
+  <form class="payment-form active" id="cardForm">
+    <label>Full Name</label>
+    <input type="text" required>
+
+    <label>Email</label>
+    <input type="email" required>
+
+    <label>Card Number</label>
+    <input type="text" maxlength="16" minlength="16" required>
+
+    <label>Expiry Date</label>
+    <input type="text" placeholder="MM/YY" maxlength="5" required>
+
+    <label>CVV</label>
+    <input type="number" maxlength="3" minlength="3" required>
+
+    <button type="submit" class="submit-btn">Pay with Card</button>
+  </form>
+
+  <!-- UPI Payment -->
+  <form class="payment-form" id="upiForm">
+    <label>Enter UPI ID (optional)</label>
+    <input type="text" placeholder="example@upi">
+
+    <div class="qr-code">
+      <img id="upiQrImage" src="https://via.placeholder.com/150?text=Loading..." alt="UPI QR Code">
+    </div>
+
+    <div style="text-align:center; margin-top: 10px;">
+      <a id="scanNow" href="#" style="color: #4CAF50; text-decoration: underline;">Or tap here to open UPI app</a>
+    </div>
+
+    <label>Or scan a QR code:</label>
+    <div id="qr-reader" style="width: 100%; margin-top: 10px;"></div>
+    <div id="qr-result" style="text-align: center; margin-top: 10px; font-weight: bold;"></div>
+
+    <button type="submit" class="submit-btn">Mark as Paid</button>
+  </form>
+
+  <!-- PayPal -->
+  <form class="payment-form" id="paypalForm">
+    <label>PayPal Email</label>
+    <input type="email" required>
+    <button type="submit" class="submit-btn">Pay with PayPal</button>
+  </form>
+
+  <!-- QR Scanner Script -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.7/html5-qrcode.min.js"></script>
+
+  <script>
+    // Display total price and update UPI QR/link
+    const totalPriceDisplay = document.getElementById('totalPriceDisplay');
+    const totalPrice = localStorage.getItem('totalPrice');
+    const upiId = "hackingbooks@oksbi";
+    const upiName = "Hacking Books";
+
+    if (totalPrice) {
+      const amount = parseFloat(totalPrice).toFixed(2);
+      totalPriceDisplay.textContent = `Total Price: $${amount}`;
+
+      const upiLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(upiName)}&am=${amount}&cu=INR`;
+      document.getElementById('scanNow').href = upiLink;
+
+      const qrImg = document.getElementById('upiQrImage');
+      qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(upiLink)}`;
+    } else {
+      totalPriceDisplay.textContent = 'Your cart is empty or total price not found.';
+    }
+
+    // Toggle forms
+    const methodButtons = document.querySelectorAll('.method-btn');
+    const forms = document.querySelectorAll('.payment-form');
+    methodButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        methodButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        forms.forEach(form => form.classList.remove('active'));
+        document.getElementById(`${btn.dataset.method}Form`).classList.add('active');
+      });
+    });
+
+    // Handle submission
+    forms.forEach(form => {
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        alert('Payment processed successfully! Thank you.');
+        localStorage.removeItem('totalPrice');
+        localStorage.removeItem('cart');
+        window.location.href = 'index.html';
+      });
+    });
+
+    // Real QR Scanner
+    function onScanSuccess(decodedText, decodedResult) {
+      document.getElementById('qr-result').innerText = `Scanned UPI: ${decodedText}`;
+      if (decodedText.startsWith("upi://pay")) {
+        window.location.href = decodedText;
+      }
+      html5QrcodeScanner.clear(); // Stop scanning
+    }
+
+    const html5QrcodeScanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 250 });
+    html5QrcodeScanner.render(onScanSuccess);
+  </script>
+</body>
+</html>
